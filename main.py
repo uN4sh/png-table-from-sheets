@@ -1,20 +1,30 @@
-# Requires modules: `pandas` Python module to create DataFrame
-#                   `subprocess` Python module to call external program
-#                   `wkhtmltopdf` to convert DataFrame HTML result to PNG
+# 10.02.2021 @algiers
+# https://github.com/vdElyn/png-table-from-sheets
 
 import pandas as pd
-import subprocess
+import subprocess, gspread, configparser
 
-sheets_row = [
-        {'DATE': '2021-02-09 20:18', 'TYPE': 'Mémorisation', 'PAGE': 569.2, 'DÉTAILS': 'al-Ma‘aridj V11 - V31', 'POUR DEMAIN': 'al-Ma‘aridj V19 - V39', 'MÉMORISATION': 'S71 V2-V7 (6L)'}, 
-        {'DATE': '2021-02-08 20:44', 'TYPE': 'Mémorisation', 'PAGE': 569.1, 'DÉTAILS': 'al-Maaridj V1 - V21', 'POUR DEMAIN': 'al-Maaridj V11 - V31', 'MÉMORISATION': 'S70 V40-V44 + S71 V1'}, 
-        {'DATE': '2021-02-07', 'TYPE': 'Off', 'PAGE': '', 'DÉTAILS': '', 'POUR DEMAIN': 'Révision reportée à la semaine pro.', 'MÉMORISATION': 'S70 V31 - V39 (5 Lignes)'}, 
-        {'DATE': '2021-02-06', 'TYPE': 'Off', 'PAGE': '', 'DÉTAILS': '', 'POUR DEMAIN': '', 'MÉMORISATION': 'S70 V22 - V30 (5 Lignes)'}, 
-        {'DATE': '2021-02-05', 'TYPE': 'Mémorisation', 'PAGE': 568.3, 'DÉTAILS': 'al-Haqqah V44 - al-Ma‘aridj V10', 'POUR DEMAIN': 'Révision Dimanche', 'MÉMORISATION': 'S70 V11 - V21 (5 Lignes)'}, 
-        {'DATE': '2021-02-04', 'TYPE': 'Mémorisation', 'PAGE': 568.2, 'DÉTAILS': 'al-Haqqah V35-V52', 'POUR DEMAIN': '', 'MÉMORISATION': "al-Ma'aridj V1 - V10 (5 Lignes)"}
-    ]
+# Parsing entries
+config = configparser.ConfigParser()
+config.read('config.ini')
 
-key_indexes = 'DATE'
+sheets_api_credential_json_path = config['SheetsAPI']['sheets_api_credential_json_path']
+sheets_file_name = config['SheetsAPI']['sheets_file_name']
+sheet_name = config['SheetsAPI']['sheet_name'] if len(config['SheetsAPI']['sheet_name']) > 1 else None
+
+limit = int(config['Table']['Limit']) if len(config['Table']['Limit']) > 1 else None
+key_indexes = config['Table']['key_indexes']
+if len(sheets_api_credential_json_path) == 0 or len(sheets_file_name) == 0 or len(key_indexes) == 0: 
+  print('Only `sheet_name` and `limit` args can be null.')
+  exit()
+
+# Connect to Sheets API & open file 
+gc = gspread.service_account(filename=sheets_api_credential_json_path)
+sh = gc.open(sheets_file_name)
+
+# Get records from Sheet
+sheets_row = sh.sheet1.get_all_records() if sheet_name is None else sh.worksheet(sheet_name).get_all_records()
+sheets_row = sheets_row[:limit]
 
 # Get indexes (line)
 index = []
@@ -27,7 +37,6 @@ columns = []
 for col in sheets_row[0]:
   if col == key_indexes: continue # On ajoute pas la colonne définie comme Index (lignes)
   columns.append(col)
-print(columns)
 
 # Setup data columns - wanted format:
 # data = {
@@ -37,17 +46,14 @@ print(columns)
 data = {}
 for col in columns:
   data[col] = []
-print(data)
 
 # Formatting data dict
 for col in data:
   for row in sheets_row:
     data[col].append(row[col])
-print(data)
-
 
 df = pd.DataFrame(data, columns = columns, index = index)
-print (df)
+print(df)
 
 pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
@@ -62,8 +68,9 @@ html_string = '''
 </html>.
 '''
 
-# OUTPUT AN HTML FILE
+# Génère un fichier HTML de la `pandas.DataFrame` avec le header CSS
 with open('df_tmp.html', 'w') as f:
     f.write(html_string.format(table=df.to_html(classes='mystyle')))
 
+# Convertit le fichier HTML généré en PNG > table.png
 subprocess.call("wkhtmltoimage -f png --encoding utf-8 df_tmp.html table.png", shell=True)
