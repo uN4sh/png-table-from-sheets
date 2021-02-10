@@ -17,15 +17,17 @@ Generates an HTML and PNG stylized table from a Google Sheets. Requires GSheet A
 
 ```python
 $ pip install pandas gspread configparser
-$ apt-get install wkhtmltopdf```
+$ apt-get install wkhtmltopdf
+```
 
 ### Results
 
 Starting from this kind of tables from Google Sheets:
 
-Key index  | Field 1 | Field 2 | Field 3
-------------- | ------------- | ----------
-Index  | Value 1 |  | Value 3
-Index  | Value 1 | Value 2 | Value 3
+
+| Key index  | Field 1 | Field 2 |
+| ------------- | ------------- | ------------- |
+| Index  | Value 1  | Value 2 |
+| Index  | Value 1  | Value 2 |
 
 Generates:
