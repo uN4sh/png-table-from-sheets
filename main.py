@@ -1,3 +1,7 @@
+# Requires modules: `pandas` Python module to create DataFrame
+#                   `subprocess` Python module to call external program
+#                   `wkhtmltopdf` to convert DataFrame HTML result to PNG
+
 import pandas as pd
 import subprocess
 
@@ -10,17 +14,39 @@ sheets_row = [
         {'DATE': '2021-02-04', 'TYPE': 'Mémorisation', 'PAGE': 568.2, 'DÉTAILS': 'al-Haqqah V35-V52', 'POUR DEMAIN': '', 'MÉMORISATION': "al-Ma'aridj V1 - V10 (5 Lignes)"}
     ]
 
-data = {'Type': [], 'Page': [], 'Détails': [], 'Demain': [], 'Mémorisation': []}
-dates = []
-for j in sheets_row:
-    dates.append(j['DATE'])
-    data['Type'].append(j['TYPE'])
-    data['Page'].append(j['PAGE'])
-    data['Détails'].append(j['DÉTAILS'])
-    data['Demain'].append(j['POUR DEMAIN'])
-    data['Mémorisation'].append(j['MÉMORISATION'])
+key_indexes = 'DATE'
 
-df = pd.DataFrame(data, columns = ['Type', 'Page', 'Détails', 'Demain', 'Mémorisation'], index=dates)
+# Get indexes (line)
+index = []
+for row in sheets_row:
+  index.append(row[key_indexes])
+
+# Get columns header - wanted format:
+# columns = ['FIELD1', 'FIELD2']
+columns = []
+for col in sheets_row[0]:
+  if col == key_indexes: continue # On ajoute pas la colonne définie comme Index (lignes)
+  columns.append(col)
+print(columns)
+
+# Setup data columns - wanted format:
+# data = {
+#   'FIELD1': [value1, value2],
+#   'FIELD2': [value1, value2]      
+# }
+data = {}
+for col in columns:
+  data[col] = []
+print(data)
+
+# Formatting data dict
+for col in data:
+  for row in sheets_row:
+    data[col].append(row[col])
+print(data)
+
+
+df = pd.DataFrame(data, columns = columns, index = index)
 print (df)
 
 pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
@@ -37,8 +63,7 @@ html_string = '''
 '''
 
 # OUTPUT AN HTML FILE
-with open('myhtml.html', 'w') as f:
+with open('df_tmp.html', 'w') as f:
     f.write(html_string.format(table=df.to_html(classes='mystyle')))
 
-subprocess.call(
-    "wkhtmltoimage -f png --encoding utf-8 myhtml.html table2.png", shell=True)
+subprocess.call("wkhtmltoimage -f png --encoding utf-8 df_tmp.html table.png", shell=True)
