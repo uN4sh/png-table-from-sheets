@@ -1,0 +1,39 @@
+/* J'ai pris le style CSS de https://dev.to/dcodeyt/creating-beautiful-html-tables-with-css-428l et le code de https://stackoverflow.com/questions/50807744/apply-css-class-to-pandas-dataframe-using-to-html/50939211#:~:text=Pandas'%20to_html%20simply%20outputs%20a,CSS%20document%20that%20styles%20it. */
+
+
+.mystyle {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.mystyle thead tr {
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+}
+
+.mystyle th,
+.mystyle td {
+    padding: 12px 15px;
+}
+
+.mystyle tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+.mystyle tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+.mystyle tbody tr:last-of-type {
+    border-bottom: 2px solid #009879;
+}
+
+.mystyle tbody tr.active-row {
+    font-weight: bold;
+    color: #009879;
+}
